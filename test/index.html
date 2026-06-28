@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -309,6 +309,10 @@
   }
   button:hover { background: var(--gray-bg); color: var(--ink); }
   button:active { transform: translateY(1px); }
+  button:focus-visible {
+    outline: 2px solid var(--navy);
+    outline-offset: 2px;
+  }
 
   button.go {
     background: var(--navy); color: #fff;
@@ -507,11 +511,11 @@
   <div class="sec-label"><span class="step">2</span>条件を選んで突合する</div>
   <div class="opts">
     <div class="field">
-      <label>税基準</label>
+      <label for="tax">税基準</label>
       <select id="tax"><option value="zeikomi">税込どうし（既定）</option><option value="zeinuki">税抜どうし</option></select>
     </div>
     <div class="field">
-      <label>対象年月</label>
+      <label for="ym">対象年月</label>
       <input type="text" id="ym" placeholder="自動（最頻月）" style="width:156px;">
     </div>
     <div class="spacer"></div>
@@ -695,6 +699,7 @@ function readFile(input, kind, set){
   const f = input.files[0]; if (!f) return;
   const fr = new FileReader();
   fr.onload = () => { try { set(decodeBuf(fr.result, kind)); $('msg').textContent = f.name + ' 読込済み'; } catch (e) { showErr(e.msg || e.code); } };
+  fr.onerror = () => showErr('ファイルの読み込みに失敗しました');
   fr.readAsArrayBuffer(f);
 }
 $('f-bill').addEventListener('change', e => readFile(e.target, 'billone', t => billText = t));
@@ -752,7 +757,7 @@ function exportCsv(res){
   const s = res.summary;
   let out = `# jikkou=${iso}, target_ym=${res.targetYM}, tax=${res.taxBasis}, tol=${res.tol}, match=${s.match}, mismatch=${s.mismatch}, miflight=${s.miflight}, check=${s.check}\r\n`;
   out += 'torihikisaki,billone_gokei,meisai_gokei,sagaku,hantei\r\n';
-  res.results.forEach(r => { out += [csvCell(r.name), r.hasB ? r.bill : '', r.hasK ? r.meisai : '', r.sagaku, csvCell(r.hantei)].join(',') + '\r\n'; });
+  res.results.forEach(r => { const sagakuVal = (r.hasB && r.hasK) ? r.sagaku : ''; out += [csvCell(r.name), r.hasB ? r.bill : '', r.hasK ? r.meisai : '', sagakuVal, csvCell(r.hantei)].join(',') + '\r\n'; });
   const blob = new Blob(['﻿' + out], { type: 'text/csv' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `totsugo_result_${stamp}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
@@ -775,3 +780,5 @@ $('sample').addEventListener('click', () => {
 </script>
 </body>
 </html>
+
+
