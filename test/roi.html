@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>買掛突合ツール ROI試算 | 株式会社AI・DX</title>
+<style>
+  /* ===== Reset & Base ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --primary:   #1a3a6b;
+    --accent:    #0e7cdb;
+    --accent2:   #00c29a;
+    --warn:      #f05a28;
+    --bg:        #f4f7fb;
+    --card:      #ffffff;
+    --text:      #1c2537;
+    --muted:     #5a6782;
+    --border:    #dde3ef;
+    --shadow:    0 4px 18px rgba(26,58,107,0.09);
+    --radius:    12px;
+  }
+
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "BIZ UDPGothic",
+                 "Meiryo", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ===== Layout ===== */
+  .page {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 28px 24px 40px;
+  }
+
+  /* ===== Header ===== */
+  .header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid var(--primary);
+  }
+  .header-left {}
+  .brand {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .header h1 {
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--primary);
+    line-height: 1.2;
+  }
+  .header h1 span {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .header-badge {
+    background: var(--warn);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 6px 14px;
+    border-radius: 20px;
+    white-space: nowrap;
+    margin-top: 6px;
+    letter-spacing: 0.04em;
+  }
+
+  /* ===== KPI Cards ===== */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .kpi-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+    border-top: 4px solid var(--accent);
+  }
+  .kpi-card.green  { border-top-color: var(--accent2); }
+  .kpi-card.orange { border-top-color: var(--warn); }
+  .kpi-card .label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 6px;
+  }
+  .kpi-card .value {
+    font-size: 38px;
+    font-weight: 900;
+    color: var(--primary);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .kpi-card.green .value  { color: var(--accent2); }
+  .kpi-card.orange .value { color: var(--warn); }
+  .kpi-card .sub {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .kpi-card .tag {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--bg);
+    color: var(--accent);
+    padding: 3px 9px;
+    border-radius: 12px;
+  }
+  .kpi-card.green .tag  { color: var(--accent2); }
+  .kpi-card.orange .tag { color: var(--warn); }
+
+  /* ===== Two-column Section ===== */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  /* ===== Before/After ===== */
+  .ba-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+  }
+  .ba-card .section-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 12px;
+  }
+  .ba-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .ba-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+  .ba-dot.red  { background: #e74c3c; }
+  .ba-dot.green{ background: var(--accent2); }
+  .ba-text { font-size: 13.5px; color: var(--text); }
+  .ba-text strong { font-weight: 700; color: var(--primary); }
+
+  /* ===== ROI Table ===== */
+  .roi-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+  }
+  .roi-card .section-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 14px;
+  }
+  table.roi-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  table.roi-table th {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  table.roi-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  table.roi-table tr:last-child td { border-bottom: none; }
+  table.roi-table tr:nth-child(even) td { background: #f9fbff; }
+  table.roi-table td.num { text-align: right; font-weight: 700; }
+  table.roi-table td.accent { color: var(--accent); }
+  table.roi-table td.green  { color: var(--accent2); font-weight: 800; }
+  table.roi-table tfoot td {
+    background: #eaf6ff;
+    font-weight: 800;
+    font-size: 14px;
+    color: var(--primary);
+    border-top: 2px solid var(--accent);
+  }
+
+  /* ===== Points ===== */
+  .points-card {
+    background: linear-gradient(135deg, var(--primary) 0%, #224b8b 100%);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+    color: #fff;
+  }
+  .points-card .section-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    opacity: 0.65;
+    margin-bottom: 14px;
+  }
+  .point-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .point-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .point-text { font-size: 13.5px; line-height: 1.55; }
+  .point-text strong { font-weight: 700; color: #7ed6ff; }
+
+  /* ===== Roadmap ===== */
+  .roadmap-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+    margin-bottom: 22px;
+  }
+  .roadmap-card .section-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 16px;
+  }
+  .roadmap {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+  }
+  .rm-phase {
+    flex: 1;
+    padding: 14px 16px;
+    border-radius: 10px;
+    margin-right: 0;
+    position: relative;
+  }
+  .rm-phase.p1 { background: #e8f4ff; border: 2px solid var(--accent); }
+  .rm-phase.p2 { background: #e6faf5; border: 2px solid var(--accent2); margin: 0 8px; }
+  .rm-phase.p3 { background: #fff4ee; border: 2px solid var(--warn); }
+  .rm-tag {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .p1 .rm-tag { color: var(--accent); }
+  .p2 .rm-tag { color: var(--accent2); }
+  .p3 .rm-tag { color: var(--warn); }
+  .rm-phase h3 {
+    font-size: 14px;
+    font-weight: 900;
+    color: var(--primary);
+    margin-bottom: 4px;
+  }
+  .rm-phase .rm-cost {
+    font-size: 20px;
+    font-weight: 900;
+    margin-bottom: 4px;
+  }
+  .p1 .rm-cost { color: var(--accent); }
+  .p2 .rm-cost { color: var(--accent2); }
+  .p3 .rm-cost { color: var(--warn); }
+  .rm-phase .rm-detail {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .rm-arrow {
+    display: flex;
+    align-items: center;
+    color: var(--muted);
+    font-size: 20px;
+    padding: 0 4px;
+    font-weight: 900;
+  }
+
+  /* ===== Calculator ===== */
+  .calc-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+    margin-bottom: 22px;
+    border: 2px dashed var(--accent);
+  }
+  .calc-card .section-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 14px;
+  }
+  .calc-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .calc-item label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .calc-item input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--primary);
+    font-family: inherit;
+    background: var(--bg);
+    transition: border-color 0.2s;
+    text-align: right;
+  }
+  .calc-item input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: #fff;
+  }
+  .calc-item .unit {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+    text-align: right;
+  }
+  .calc-result {
+    background: linear-gradient(90deg, #e8f4ff 0%, #e6faf5 100%);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .calc-result-item .r-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+  }
+  .calc-result-item .r-val {
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--primary);
+  }
+  .calc-result-item .r-val.green { color: var(--accent2); }
+  .calc-result-item .r-val.blue  { color: var(--accent); }
+
+  /* ===== Footer ===== */
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .footer strong { color: var(--primary); }
+
+  /* ===== Print ===== */
+  @media print {
+    body { background: #fff; font-size: 12px; }
+    .page { padding: 10px 16px; max-width: 100%; }
+    .kpi-card .value { font-size: 30px; }
+    .calc-card { display: none; }
+    .roadmap-card .rm-phase h3 { font-size: 12px; }
+    .roadmap-card .rm-cost { font-size: 16px; }
+    @page { size: A4 landscape; margin: 10mm; }
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 700px) {
+    .kpi-row { grid-template-columns: 1fr; }
+    .two-col  { grid-template-columns: 1fr; }
+    .calc-grid{ grid-template-columns: 1fr 1fr; }
+    .roadmap  { flex-direction: column; }
+    .rm-arrow { display: none; }
+    .rm-phase.p2 { margin: 8px 0; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ===== HEADER ===== -->
+  <div class="header">
+    <div class="header-left">
+      <div class="brand">株式会社AI・DX ／ 高木産業グループ</div>
+      <h1>
+        買掛突合ツール 導入ROI試算
+        <span>大和鋼業株式会社 様向け ／ 2026年6月</span>
+      </h1>
+    </div>
+    <div class="header-badge">🔒 機密資料</div>
+  </div>
+
+  <!-- ===== KPI CARDS ===== -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="tag">月次削減</div>
+      <div class="label">月間工数削減（目安）</div>
+      <div class="value">20<span style="font-size:20px;font-weight:700;">時間</span></div>
+      <div class="sub">担当者 2名 × 月10h削減 想定</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="tag">年間効果</div>
+      <div class="label">年間コスト削減（試算）</div>
+      <div class="value">48<span style="font-size:20px;font-weight:700;">万円</span></div>
+      <div class="sub">時給2,000円 × 20h × 12ヶ月</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="tag">回収期間</div>
+      <div class="label">投資回収期間（目安）</div>
+      <div class="value">3〜4<span style="font-size:20px;font-weight:700;">年</span></div>
+      <div class="sub">導入コスト150万円 ÷ 年48万円</div>
+    </div>
+  </div>
+
+  <!-- ===== BEFORE / AFTER + ROI TABLE ===== -->
+  <div class="two-col">
+    <!-- Before / After -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="ba-card">
+        <div class="section-title">❌ 現状（手作業）</div>
+        <div class="ba-row"><div class="ba-dot red"></div><div class="ba-text">買掛明細リスト（Excel/CSV）を印刷 or 画面表示</div></div>
+        <div class="ba-row"><div class="ba-dot red"></div><div class="ba-text">BillOne 請求書を1枚ずつ開いて目視確認</div></div>
+        <div class="ba-row"><div class="ba-dot red"></div><div class="ba-text"><strong>月10〜15時間 / 担当者</strong>の突合・転記作業</div></div>
+        <div class="ba-row"><div class="ba-dot red"></div><div class="ba-text">転記ミス・抜け漏れのリスクが常態化</div></div>
+        <div class="ba-row"><div class="ba-dot red"></div><div class="ba-text">差異発生時の原因調査に追加工数が発生</div></div>
+      </div>
+      <div class="ba-card">
+        <div class="section-title">✅ 導入後（AI突合ツール）</div>
+        <div class="ba-row"><div class="ba-dot green"></div><div class="ba-text"><strong>CSVをドラッグ＆ドロップ</strong>するだけで突合開始</div></div>
+        <div class="ba-row"><div class="ba-dot green"></div><div class="ba-text"><strong>数秒〜数分</strong>で全件突合・差異ハイライト</div></div>
+        <div class="ba-row"><div class="ba-dot green"></div><div class="ba-text">差異一覧をExcelエクスポート → 承認ワークフローへ</div></div>
+        <div class="ba-row"><div class="ba-dot green"></div><div class="ba-text"><strong>データはPC内だけ</strong>で完結（外部送信ゼロ）</div></div>
+        <div class="ba-row"><div class="ba-dot green"></div><div class="ba-text">月次クローズが<strong>最大2〜3日短縮</strong>可</div></div>
+      </div>
+    </div>
+
+    <!-- ROI Table -->
+    <div class="roi-card">
+      <div class="section-title">💴 ROI 試算表</div>
+      <table class="roi-table">
+        <thead>
+          <tr>
+            <th>項目</th>
+            <th style="text-align:right;">月次</th>
+            <th style="text-align:right;">年次</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>突合工数（現状）</td>
+            <td class="num">20 h</td>
+            <td class="num">240 h</td>
+          </tr>
+          <tr>
+            <td>工数削減率（目安）</td>
+            <td class="num accent">▲ 90%</td>
+            <td class="num accent">—</td>
+          </tr>
+          <tr>
+            <td>削減工数（試算）</td>
+            <td class="num">18 h</td>
+            <td class="num">216 h</td>
+          </tr>
+          <tr>
+            <td>時給単価（想定）</td>
+            <td class="num">2,000 円</td>
+            <td class="num">—</td>
+          </tr>
+          <tr>
+            <td>月次コスト削減（試算）</td>
+            <td class="num green">36,000 円</td>
+            <td class="num green">432,000 円</td>
+          </tr>
+          <tr>
+            <td>ミス修正・差異調査コスト削減</td>
+            <td class="num green">〜10,000 円</td>
+            <td class="num green">〜120,000 円</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td><strong>合計 削減効果（試算）</strong></td>
+            <td class="num"><strong>〜46,000 円</strong></td>
+            <td class="num"><strong>〜552,000 円</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+      <div style="margin-top:12px;background:#f4f7fb;border-radius:8px;padding:10px 14px;font-size:12px;color:var(--muted);">
+        ※ 上記は概算試算です。実際の削減効果は業務量・担当者数により異なります。<br>
+        ※ 時給単価・工数は貴社実態に合わせて下記計算機で調整ください。
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CALCULATOR ===== -->
+  <div class="calc-card">
+    <div class="section-title">🧮 ROI かんたん計算機（数値を変えると自動更新）</div>
+    <div class="calc-grid">
+      <div class="calc-item">
+        <label>月間突合工数（現状）</label>
+        <input type="number" id="c_hours" value="20" min="1" oninput="calc()">
+        <div class="unit">時間 / 月</div>
+      </div>
+      <div class="calc-item">
+        <label>担当者数</label>
+        <input type="number" id="c_staff" value="2" min="1" oninput="calc()">
+        <div class="unit">名</div>
+      </div>
+      <div class="calc-item">
+        <label>時給（想定）</label>
+        <input type="number" id="c_wage" value="2000" min="0" step="100" oninput="calc()">
+        <div class="unit">円 / 時間</div>
+      </div>
+      <div class="calc-item">
+        <label>導入コスト</label>
+        <input type="number" id="c_cost" value="150" min="0" oninput="calc()">
+        <div class="unit">万円</div>
+      </div>
+    </div>
+    <div class="calc-result">
+      <div class="calc-result-item">
+        <div class="r-label">年間削減コスト（試算）</div>
+        <div class="r-val green" id="r_annual">—</div>
+      </div>
+      <div class="calc-result-item">
+        <div class="r-label">投資回収期間（目安）</div>
+        <div class="r-val blue" id="r_payback">—</div>
+      </div>
+      <div class="calc-result-item">
+        <div class="r-label">3年間累計削減効果</div>
+        <div class="r-val" id="r_3yr">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 3 POINTS + ROADMAP ===== -->
+  <div class="two-col" style="margin-bottom:22px;">
+    <div class="points-card">
+      <div class="section-title">💡 導入の4つの安心ポイント</div>
+      <div class="point-row">
+        <div class="point-num">1</div>
+        <div class="point-text"><strong>情報漏洩ゼロ</strong><br>データはすべて社内PC内だけで処理。クラウドへの送信は一切ありません。</div>
+      </div>
+      <div class="point-row">
+        <div class="point-num">2</div>
+        <div class="point-text"><strong>既存システム無改修</strong><br>Excel/CSVが出力できれば動きます。ERP・基幹システムの改修は不要。</div>
+      </div>
+      <div class="point-row">
+        <div class="point-num">3</div>
+        <div class="point-text"><strong>2週間で稼働</strong><br>スモールスタート設計のため、最短2週間で第一弾を本稼働できます。</div>
+      </div>
+      <div class="point-row">
+        <div class="point-num">4</div>
+        <div class="point-text"><strong>将来拡張の入口</strong><br>第一弾実績を土台に「図面AI読取（本丸）」へ段階的に展開できます。</div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <!-- Quick Timeline -->
+      <div class="ba-card">
+        <div class="section-title">📅 導入スケジュール（目安）</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="min-width:72px;font-size:11px;font-weight:800;color:var(--accent);background:#e8f4ff;border-radius:6px;padding:3px 8px;text-align:center;">Week 1</div>
+            <div style="font-size:13px;">要件確認・CSVフォーマット取込・突合ロジック設定</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="min-width:72px;font-size:11px;font-weight:800;color:var(--accent);background:#e8f4ff;border-radius:6px;padding:3px 8px;text-align:center;">Week 2</div>
+            <div style="font-size:13px;">実データ検証・差異レポート調整・操作研修</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="min-width:72px;font-size:11px;font-weight:800;color:var(--accent2);background:#e6faf5;border-radius:6px;padding:3px 8px;text-align:center;">〜W4</div>
+            <div style="font-size:13px;">本番稼働・月次クローズで効果測定</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact -->
+      <div class="ba-card" style="background:linear-gradient(135deg,#f0f8ff,#e6faf5);">
+        <div class="section-title">📞 お問い合わせ</div>
+        <div style="font-size:14px;font-weight:700;color:var(--primary);margin-bottom:4px;">株式会社AI・DX ／ 高木産業グループ</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">担当: 高木 豊大</div>
+        <div style="font-size:13px;color:var(--text);">まずは<strong>無償デモ</strong>でお試しください。<br>実際の買掛データ（匿名化）でその場で突合します。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ROADMAP ===== -->
+  <div class="roadmap-card">
+    <div class="section-title">🗺️ 将来ロードマップ（段階投資）</div>
+    <div class="roadmap">
+      <div class="rm-phase p1">
+        <div class="rm-tag">第一弾 ✅ 今回</div>
+        <h3>買掛突合ツール</h3>
+        <div class="rm-cost">120〜180万円</div>
+        <div class="rm-detail">CSV突合 / 差異レポート<br>2週間稼働 / 年間48万円削減</div>
+      </div>
+      <div class="rm-arrow">→</div>
+      <div class="rm-phase p2">
+        <div class="rm-tag">第二弾</div>
+        <h3>請求書AI読取自動化</h3>
+        <div class="rm-cost">300〜500万円</div>
+        <div class="rm-detail">OCR＋AI で請求書→明細自動入力<br>転記作業を限りなくゼロへ</div>
+      </div>
+      <div class="rm-arrow">→</div>
+      <div class="rm-phase p3">
+        <div class="rm-tag">本丸 🎯</div>
+        <h3>図面AI読取・自動作図</h3>
+        <div class="rm-cost">1,000〜1,500万円</div>
+        <div class="rm-detail">鋼材図面の検図・承認・Gコード生成<br>設計リードタイム 大幅短縮</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <div class="footer">
+    <div>
+      <strong>株式会社AI・DX ／ 高木産業グループ</strong>
+      ｜ 本資料の数値はすべて概算試算です。正式見積は別途ご提出します。
+    </div>
+    <div>作成: 2026年6月 ｜ 機密・社外秘</div>
+  </div>
+
+</div><!-- /.page -->
+
+<script>
+/* ===== Calculator ===== */
+function fmt(n) {
+  if (n >= 10000) return Math.round(n / 10000 * 10) / 10 + ' 万円';
+  return n.toLocaleString('ja-JP') + ' 円';
+}
+function calc() {
+  var hours  = parseFloat(document.getElementById('c_hours').value) || 0;
+  var staff  = parseFloat(document.getElementById('c_staff').value) || 1;
+  var wage   = parseFloat(document.getElementById('c_wage').value)  || 0;
+  var costMn = parseFloat(document.getElementById('c_cost').value)  || 0;
+
+  var annualSave = hours * staff * wage * 12 * 0.9; // 90% reduction
+  var cost       = costMn * 10000;
+  var paybackYr  = cost > 0 && annualSave > 0 ? cost / annualSave : null;
+  var threeYr    = annualSave * 3 - cost;
+
+  document.getElementById('r_annual').textContent  = fmt(annualSave);
+  document.getElementById('r_payback').textContent =
+    paybackYr ? (Math.round(paybackYr * 10) / 10) + ' 年' : '—';
+  document.getElementById('r_3yr').textContent =
+    '+ ' + fmt(Math.max(0, threeYr));
+}
+calc(); // run on load
+</script>
+</body>
+</html>
