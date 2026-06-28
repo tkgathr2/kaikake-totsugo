@@ -6,92 +6,136 @@
 <title>買掛請求書 突合くん — 株式会社AI・DX（クローズド版 v2.1）</title>
 <style>
   :root{
-    --ink:#1c1c1a; --muted:#6b6b66; --line:#e3e1d8; --card:#fff; --bg:#f6f5f0; --accent:#185fa5; --accent-bg:#e6f1fb;
-    --ok-bg:#e1f5ee; --ok:#0f6e56; --warn-bg:#faeeda; --warn:#854f0b; --bad-bg:#fcebeb; --bad:#a32d2d; --gray-bg:#f1efe8; --gray:#5f5e5a;
+    --bg:#eef2f9; --surface:#ffffff; --surface-2:#f7f9fc; --ink:#0f1b2d; --muted:#5b6b82; --faint:#8a99af;
+    --line:#e6ecf5; --line-2:#d7e0ee; --brand:#163a6b; --brand-2:#2563eb; --brand-soft:#eaf1ff;
+    --ok:#067a52; --ok-bg:#e8f7f0; --ok-line:#bfe8d6; --warn:#a85b08; --warn-bg:#fdf4e3; --warn-line:#f3d79e;
+    --bad:#b3261e; --bad-bg:#fdecec; --bad-line:#f3c4c0; --gray:#46566d; --gray-bg:#eef2f8; --gray-line:#dde5f0;
+    --radius:16px; --r-sm:10px; --mono:"SFMono-Regular",Consolas,"Courier New",monospace;
+    --shadow-sm:0 1px 2px rgba(16,30,54,.05),0 4px 14px rgba(16,30,54,.05);
   }
   *{box-sizing:border-box;}
-  body{font-family:"Yu Gothic UI","Hiragino Sans","Meiryo",system-ui,sans-serif; margin:0; background:var(--bg); color:var(--ink); line-height:1.6;}
-  .wrap{max-width:1000px; margin:0 auto; padding:24px 20px 64px;}
-  header{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;}
-  h1{font-size:22px; font-weight:600; margin:0;}
-  .brand{color:var(--muted); font-size:12px;}
-  .sub{color:var(--muted); font-size:13px; margin:2px 0 0;}
-  .lock{display:inline-flex; align-items:center; gap:6px; background:var(--accent-bg); color:var(--accent); font-size:12.5px; font-weight:600; padding:7px 12px; border-radius:8px;}
-  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0;}
-  @media(max-width:680px){.grid2{grid-template-columns:1fr;}}
-  .panel{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px;}
-  .panel h2{font-size:14px; font-weight:600; margin:0 0 4px;}
-  .panel p{font-size:12px; color:var(--muted); margin:0 0 8px;}
-  input[type=file]{font-size:13px; width:100%;}
-  .opts{display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin:6px 0 18px;}
-  .opts label{font-size:13px; color:var(--muted);}
-  select,input[type=text]{font-family:inherit; font-size:14px; padding:7px 10px; border:1px solid var(--line); border-radius:8px; background:#fcfcfa; color:var(--ink);}
-  button{font-family:inherit; font-size:14px; font-weight:600; padding:10px 20px; border-radius:8px; cursor:pointer; border:1px solid var(--line); background:#fff;}
-  button.go{background:var(--accent); color:#fff; border-color:var(--accent);}
-  button.go:active{transform:scale(.98);}
-  .cards{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:20px 0 8px;}
-  @media(max-width:680px){.cards{grid-template-columns:repeat(2,1fr);}}
-  .stat{border-radius:10px; padding:14px 16px; border:1px solid var(--line); background:#fff;}
-  .stat .n{font-size:26px; font-weight:600; line-height:1;}
-  .stat .l{font-size:12.5px; color:var(--muted); margin-top:6px;}
-  .stat.ok .n{color:var(--ok);} .stat.warn .n{color:var(--warn);} .stat.bad .n{color:var(--bad);} .stat.gray .n{color:var(--gray);}
-  table{width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-top:8px;}
-  th,td{padding:11px 14px; text-align:left; font-size:13.5px; border-bottom:1px solid var(--line);}
-  th{background:var(--gray-bg); font-weight:600; font-size:12.5px; color:var(--muted);}
-  td.num{text-align:right; font-variant-numeric:tabular-nums; font-family:"Consolas",monospace;}
-  tr:last-child td{border-bottom:none;}
-  .tag{display:inline-block; font-size:12px; font-weight:600; padding:3px 10px; border-radius:20px;}
-  .tag.ok{background:var(--ok-bg); color:var(--ok);} .tag.warn{background:var(--warn-bg); color:var(--warn);} .tag.bad{background:var(--bad-bg); color:var(--bad);} .tag.gray{background:var(--gray-bg); color:var(--gray);}
+  body{font-family:-apple-system,"Segoe UI","Yu Gothic UI","Hiragino Kaku Gothic ProN",Meiryo,system-ui,sans-serif;
+    margin:0; background:var(--bg); color:var(--ink); line-height:1.65; -webkit-font-smoothing:antialiased;}
+  .appbar{background:var(--surface); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:10;}
+  .appbar-in{max-width:1040px; margin:0 auto; padding:13px 24px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;}
+  .brandmark{display:flex; align-items:center; gap:11px;}
+  .logo{width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg,#1f4e9c,#2563eb); display:flex; align-items:center; justify-content:center; flex:0 0 auto; box-shadow:0 2px 9px rgba(37,99,235,.32);}
+  .brandtxt .co{font-size:10.5px; letter-spacing:.16em; color:var(--brand-2); font-weight:700;}
+  .brandtxt .pname{font-size:16px; font-weight:700; color:var(--ink); line-height:1.2;}
+  .lock{display:inline-flex; align-items:center; gap:7px; background:var(--brand-soft); color:var(--brand); font-size:12px; font-weight:600; padding:8px 14px; border-radius:999px; border:1px solid #d3e2fb;}
+  .lock svg{flex:0 0 auto;}
+  .wrap{max-width:1040px; margin:0 auto; padding:28px 24px 72px;}
+  .intro{margin:2px 0 22px;}
+  .intro h1{font-size:21px; font-weight:700; margin:0 0 5px; letter-spacing:.01em;}
+  .intro p{color:var(--muted); font-size:14px; margin:0;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:0 0 16px;}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr;}}
+  .panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:var(--shadow-sm); transition:border-color .15s;}
+  .panel:hover{border-color:var(--line-2);}
+  .panel .ph{display:flex; align-items:center; gap:10px; margin-bottom:6px;}
+  .panel .badge{width:25px; height:25px; border-radius:7px; background:var(--brand-soft); color:var(--brand-2); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex:0 0 auto;}
+  .panel h2{font-size:14.5px; font-weight:700; margin:0; color:var(--ink);}
+  .panel p{font-size:11.5px; color:var(--faint); margin:0 0 13px; line-height:1.6; font-family:var(--mono);}
+  input[type=file]{font-size:13px; width:100%; color:var(--muted);}
+  input[type=file]::file-selector-button{font-family:inherit; font-weight:600; font-size:13px; color:var(--brand-2); background:var(--brand-soft); border:1px solid #d3e2fb; border-radius:8px; padding:8px 15px; margin-right:12px; cursor:pointer; transition:background .15s;}
+  input[type=file]::file-selector-button:hover{background:#dceafd;}
+  .opts{display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap; margin:0 0 22px; padding:16px 18px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-sm);}
+  .field{display:flex; flex-direction:column; gap:6px;}
+  .field label{font-size:11px; font-weight:600; color:var(--muted); letter-spacing:.03em;}
+  select,input[type=text]{font-family:inherit; font-size:14px; padding:9px 12px; border:1px solid var(--line-2); border-radius:var(--r-sm); background:var(--surface); color:var(--ink); min-height:40px; transition:border-color .15s,box-shadow .15s;}
+  select:focus,input[type=text]:focus{outline:none; border-color:var(--brand-2); box-shadow:0 0 0 3px rgba(37,99,235,.14);}
+  .spacer{flex:1 1 auto;}
+  button{font-family:inherit; font-size:14px; font-weight:600; padding:0 18px; min-height:40px; border-radius:var(--r-sm); cursor:pointer; border:1px solid var(--line-2); background:var(--surface); color:var(--ink); transition:all .15s; display:inline-flex; align-items:center; gap:7px;}
+  button:hover{border-color:var(--faint); background:var(--surface-2);}
+  button.go{background:linear-gradient(135deg,#1f4e9c,#2563eb); color:#fff; border:none; box-shadow:0 2px 9px rgba(37,99,235,.3); padding:0 22px;}
+  button.go:hover{box-shadow:0 5px 16px rgba(37,99,235,.4);}
+  button:active{transform:translateY(1px);}
+  .cards{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:0 0 16px;}
+  @media(max-width:720px){.cards{grid-template-columns:repeat(2,1fr);}}
+  .stat{position:relative; border-radius:var(--radius); padding:18px 18px 16px 22px; border:1px solid var(--line); background:var(--surface); box-shadow:var(--shadow-sm); overflow:hidden;}
+  .stat::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--faint);}
+  .stat .n{font-size:30px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; letter-spacing:-.01em;}
+  .stat .l{font-size:12.5px; color:var(--muted); margin-top:9px; font-weight:500;}
+  .stat.ok::before{background:var(--ok);} .stat.ok .n{color:var(--ok);}
+  .stat.warn::before{background:var(--warn);} .stat.warn .n{color:var(--warn);}
+  .stat.bad::before{background:var(--bad);} .stat.bad .n{color:var(--bad);}
+  .stat.gray::before{background:var(--gray);} .stat.gray .n{color:var(--gray);}
+  #result table{width:100%; border-collapse:separate; border-spacing:0; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow-sm);}
+  #result th,#result td{padding:13px 16px; text-align:left; font-size:13.5px; border-bottom:1px solid var(--line);}
+  #result th{background:var(--surface-2); font-weight:600; font-size:11.5px; color:var(--muted); letter-spacing:.04em;}
+  #result td.num{text-align:right; font-variant-numeric:tabular-nums; font-family:var(--mono); color:var(--ink);}
+  #result tbody tr:last-child td{border-bottom:none;}
+  #result tbody tr:not(.meisai):hover{background:var(--surface-2);}
   .mismatch-row{cursor:pointer;}
-  .meisai{background:#fbfaf6; font-size:12.5px; color:var(--muted);}
-  .evac{margin-top:18px; font-size:13px; color:var(--bad);}
-  .err{margin-top:16px; padding:12px 16px; background:var(--bad-bg); color:var(--bad); border-radius:8px; font-size:13.5px;}
-  .foot{color:var(--muted); font-size:12px; margin-top:20px; line-height:1.8;}
+  .meisai{background:var(--warn-bg);}
+  .meisai td{font-size:12.5px; color:var(--warn);}
+  .tag{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:4px 11px; border-radius:999px; border:1px solid transparent;}
+  .tag::before{content:""; width:6px; height:6px; border-radius:50%; background:currentColor; flex:0 0 auto;}
+  .tag.ok{background:var(--ok-bg); color:var(--ok); border-color:var(--ok-line);}
+  .tag.warn{background:var(--warn-bg); color:var(--warn); border-color:var(--warn-line);}
+  .tag.bad{background:var(--bad-bg); color:var(--bad); border-color:var(--bad-line);}
+  .tag.gray{background:var(--gray-bg); color:var(--gray); border-color:var(--gray-line);}
+  .empty{background:var(--surface); border:1px dashed var(--line-2); border-radius:var(--radius); padding:46px 24px; text-align:center;}
+  .empty svg{margin-bottom:12px;}
+  .empty .et{font-size:14px; color:var(--muted); font-weight:600;}
+  .empty .es{font-size:12.5px; margin-top:5px; color:var(--faint);}
+  #msg{font-size:12.5px; color:var(--faint);}
+  .evac{margin-top:16px; padding:12px 16px; background:var(--bad-bg); border:1px solid var(--bad-line); border-radius:var(--r-sm); font-size:13px; color:var(--bad);}
+  .err{margin:0 0 16px; padding:13px 16px; background:var(--bad-bg); border:1px solid var(--bad-line); color:var(--bad); border-radius:var(--r-sm); font-size:13.5px; font-weight:500;}
+  .foot{color:var(--faint); font-size:12px; margin-top:26px; line-height:1.85; border-top:1px solid var(--line); padding-top:18px;}
+  .foot b{color:var(--muted); font-weight:600;}
   .hide{display:none;}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div>
-      <h1>買掛請求書 突合くん <span class="brand">クローズド版 v2.1</span></h1>
-      <p class="sub">BillOneの請求金額 × 買掛金元帳を自動突合し、一致・不一致・未到着を判定します。</p>
+<div class="appbar">
+  <div class="appbar-in">
+    <div class="brandmark">
+      <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h9"/><path d="M3 12h6"/><path d="M13 16l3.2 3.2L22 11"/></svg></div>
+      <div class="brandtxt"><div class="co">株式会社AI・DX</div><div class="pname">買掛請求書 突合くん</div></div>
     </div>
-    <span class="lock">🔒 データはこのPCの中だけで処理／ネットに一切送信しません</span>
-  </header>
+    <span class="lock"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>データはこのPC内だけで処理｜ネットに送信しません</span>
+  </div>
+</div>
+<div class="wrap">
+  <div class="intro">
+    <h1>請求書と買掛明細を、自動で突合</h1>
+    <p>BillOneの請求金額 × 買掛明細リストを取引先単位で照合し、一致・不一致・未到着を瞬時に判定します。</p>
+  </div>
 
   <div class="grid2">
     <div class="panel">
-      <h2>① BillOne 請求書一覧（CSV）</h2>
-      <p>列：torihikisaki, torihikisaki_code, seikyu_zeinuki, shohizei, seikyu_zeikomi, seikyusho_no, seikyu_ym</p>
+      <div class="ph"><span class="badge">1</span><h2>BillOne 請求書一覧（CSV）</h2></div>
+      <p>torihikisaki / torihikisaki_code / seikyu_zeinuki / shohizei / seikyu_zeikomi / seikyusho_no / seikyu_ym</p>
       <input type="file" id="f-bill" accept=".csv">
     </div>
     <div class="panel">
-      <h2>② 買掛明細リスト（CSV・対象月のみ）</h2>
-      <p>列：shiiresaki, shiiresaki_code, hacchu_hinmei_code, kenshu_kingaku, gokei_gaku ほか。対象月の明細のみを出力して選択してください。</p>
+      <div class="ph"><span class="badge">2</span><h2>買掛明細リスト（CSV・対象月のみ）</h2></div>
+      <p>shiiresaki / shiiresaki_code / hacchu_hinmei_code / kenshu_kingaku / gokei_gaku ほか</p>
       <input type="file" id="f-kai" accept=".csv">
     </div>
   </div>
 
   <div class="opts">
-    <span><label>税基準</label>
-      <select id="tax"><option value="zeikomi">税込どうし（既定）</option><option value="zeinuki">税抜どうし</option></select></span>
-    <span><label>対象年月</label>
-      <input type="text" id="ym" placeholder="自動（最頻月）" style="width:120px;"></span>
-    <button class="go" id="run">突合する</button>
+    <div class="field"><label>税基準</label>
+      <select id="tax"><option value="zeikomi">税込どうし（既定）</option><option value="zeinuki">税抜どうし</option></select></div>
+    <div class="field"><label>対象年月</label>
+      <input type="text" id="ym" placeholder="自動（最頻月）" style="width:140px;"></div>
+    <div class="spacer"></div>
     <button id="sample">サンプルで試す</button>
-    <button id="export" class="hide">結果を書き出す（CSV）</button>
-    <span id="msg" class="brand"></span>
+    <button class="go" id="run"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h7"/><path d="M4 14h5"/><path d="M13 15l3 3 5-6"/></svg>突合する</button>
+    <button id="export" class="hide"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>結果を書き出す（CSV）</button>
+    <span id="msg"></span>
   </div>
 
   <div id="err" class="err hide"></div>
   <div id="cards" class="cards hide"></div>
-  <div id="result"></div>
+  <div id="result"><div class="empty"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#b4c0d4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M9 13h6M9 17h4"/></svg><div class="et">2つのCSVを選んで「突合する」</div><div class="es">または「サンプルで試す」で動作をご確認いただけます</div></div></div>
   <div id="evac" class="evac hide"></div>
 
   <p class="foot">
-    判定：両側あり｜差｜≤1円＝<b>一致</b>／超＝<b>不一致（差額表示）</b>／明細にあり請求なし＝<b>未到着（督促）</b>／請求あり明細なし＝<b>要確認（未計上）</b>。データ不正・キー空・名寄せ衝突は<b>退避（処理対象外）</b>。<br>
-    ※信頼用MVP。御社本番版は実データ・到着状況表自動化・保守まで。 — 株式会社AI・DX
+    判定基準：両側あり｜差｜≤1円＝<b>一致</b>／超＝<b>不一致（差額表示）</b>／明細にあり請求なし＝<b>未到着（督促）</b>／請求あり明細なし＝<b>要確認（未計上）</b>。データ不正・キー空・名寄せ衝突は<b>退避（処理対象外）</b>。<br>
+    信頼用MVPデモ。御社本番版は実データ取込・到着状況表の自動作成・保守まで対応します。　— 株式会社AI・DX
   </p>
 </div>
 
