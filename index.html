@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>買掛請求書 突合くん — 株式会社AI・DX（クローズド版 v2.1）</title>
+<style>
+  :root{
+    --ink:#1c1c1a; --muted:#6b6b66; --line:#e3e1d8; --card:#fff; --bg:#f6f5f0; --accent:#185fa5; --accent-bg:#e6f1fb;
+    --ok-bg:#e1f5ee; --ok:#0f6e56; --warn-bg:#faeeda; --warn:#854f0b; --bad-bg:#fcebeb; --bad:#a32d2d; --gray-bg:#f1efe8; --gray:#5f5e5a;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:"Yu Gothic UI","Hiragino Sans","Meiryo",system-ui,sans-serif; margin:0; background:var(--bg); color:var(--ink); line-height:1.6;}
+  .wrap{max-width:1000px; margin:0 auto; padding:24px 20px 64px;}
+  header{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;}
+  h1{font-size:22px; font-weight:600; margin:0;}
+  .brand{color:var(--muted); font-size:12px;}
+  .sub{color:var(--muted); font-size:13px; margin:2px 0 0;}
+  .lock{display:inline-flex; align-items:center; gap:6px; background:var(--accent-bg); color:var(--accent); font-size:12.5px; font-weight:600; padding:7px 12px; border-radius:8px;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0;}
+  @media(max-width:680px){.grid2{grid-template-columns:1fr;}}
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px;}
+  .panel h2{font-size:14px; font-weight:600; margin:0 0 4px;}
+  .panel p{font-size:12px; color:var(--muted); margin:0 0 8px;}
+  input[type=file]{font-size:13px; width:100%;}
+  .opts{display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin:6px 0 18px;}
+  .opts label{font-size:13px; color:var(--muted);}
+  select,input[type=text]{font-family:inherit; font-size:14px; padding:7px 10px; border:1px solid var(--line); border-radius:8px; background:#fcfcfa; color:var(--ink);}
+  button{font-family:inherit; font-size:14px; font-weight:600; padding:10px 20px; border-radius:8px; cursor:pointer; border:1px solid var(--line); background:#fff;}
+  button.go{background:var(--accent); color:#fff; border-color:var(--accent);}
+  button.go:active{transform:scale(.98);}
+  .cards{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:20px 0 8px;}
+  @media(max-width:680px){.cards{grid-template-columns:repeat(2,1fr);}}
+  .stat{border-radius:10px; padding:14px 16px; border:1px solid var(--line); background:#fff;}
+  .stat .n{font-size:26px; font-weight:600; line-height:1;}
+  .stat .l{font-size:12.5px; color:var(--muted); margin-top:6px;}
+  .stat.ok .n{color:var(--ok);} .stat.warn .n{color:var(--warn);} .stat.bad .n{color:var(--bad);} .stat.gray .n{color:var(--gray);}
+  table{width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-top:8px;}
+  th,td{padding:11px 14px; text-align:left; font-size:13.5px; border-bottom:1px solid var(--line);}
+  th{background:var(--gray-bg); font-weight:600; font-size:12.5px; color:var(--muted);}
+  td.num{text-align:right; font-variant-numeric:tabular-nums; font-family:"Consolas",monospace;}
+  tr:last-child td{border-bottom:none;}
+  .tag{display:inline-block; font-size:12px; font-weight:600; padding:3px 10px; border-radius:20px;}
+  .tag.ok{background:var(--ok-bg); color:var(--ok);} .tag.warn{background:var(--warn-bg); color:var(--warn);} .tag.bad{background:var(--bad-bg); color:var(--bad);} .tag.gray{background:var(--gray-bg); color:var(--gray);}
+  .mismatch-row{cursor:pointer;}
+  .meisai{background:#fbfaf6; font-size:12.5px; color:var(--muted);}
+  .evac{margin-top:18px; font-size:13px; color:var(--bad);}
+  .err{margin-top:16px; padding:12px 16px; background:var(--bad-bg); color:var(--bad); border-radius:8px; font-size:13.5px;}
+  .foot{color:var(--muted); font-size:12px; margin-top:20px; line-height:1.8;}
+  .hide{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>買掛請求書 突合くん <span class="brand">クローズド版 v2.1</span></h1>
+      <p class="sub">BillOneの請求金額 × 買掛金元帳を自動突合し、一致・不一致・未到着を判定します。</p>
+    </div>
+    <span class="lock">🔒 データはこのPCの中だけで処理／ネットに一切送信しません</span>
+  </header>
+
+  <div class="grid2">
+    <div class="panel">
+      <h2>① BillOne 請求書一覧（CSV）</h2>
+      <p>列：torihikisaki, torihikisaki_code, seikyu_zeinuki, shohizei, seikyu_zeikomi, seikyusho_no, seikyu_ym</p>
+      <input type="file" id="f-bill" accept=".csv">
+    </div>
+    <div class="panel">
+      <h2>② 買掛明細リスト（CSV・対象月のみ）</h2>
+      <p>列：shiiresaki, shiiresaki_code, hacchu_hinmei_code, kenshu_kingaku, gokei_gaku ほか。対象月の明細のみを出力して選択してください。</p>
+      <input type="file" id="f-kai" accept=".csv">
+    </div>
+  </div>
+
+  <div class="opts">
+    <span><label>税基準</label>
+      <select id="tax"><option value="zeikomi">税込どうし（既定）</option><option value="zeinuki">税抜どうし</option></select></span>
+    <span><label>対象年月</label>
+      <input type="text" id="ym" placeholder="自動（最頻月）" style="width:120px;"></span>
+    <button class="go" id="run">突合する</button>
+    <button id="sample">サンプルで試す</button>
+    <button id="export" class="hide">結果を書き出す（CSV）</button>
+    <span id="msg" class="brand"></span>
+  </div>
+
+  <div id="err" class="err hide"></div>
+  <div id="cards" class="cards hide"></div>
+  <div id="result"></div>
+  <div id="evac" class="evac hide"></div>
+
+  <p class="foot">
+    判定：両側あり｜差｜≤1円＝<b>一致</b>／超＝<b>不一致（差額表示）</b>／明細にあり請求なし＝<b>未到着（督促）</b>／請求あり明細なし＝<b>要確認（未計上）</b>。データ不正・キー空・名寄せ衝突は<b>退避（処理対象外）</b>。<br>
+    ※信頼用MVP。御社本番版は実データ・到着状況表自動化・保守まで。 — 株式会社AI・DX
+  </p>
+</div>
+
+<script>
+// ===== 突合コア（Nodeテスト totsugo_test.mjs で全21件PASS済みと同一） =====
+function stripBom(s){ return s.charCodeAt(0) === 0xFEFF ? s.slice(1) : s; }
+function parseCsv(text){
+  text = stripBom(text);
+  const rows = []; let field = ''; let row = []; let i = 0; const n = text.length;
+  let state = 'FIELD'; let fieldStart = true;
+  const endField = () => { row.push(field); field = ''; fieldStart = true; };
+  const endRow = () => { endField(); if (!(row.length === 1 && row[0] === '')) rows.push(row); row = []; };
+  while (i < n){
+    const c = text[i];
+    if (state === 'FIELD'){
+      if (fieldStart && c === '"'){ state = 'QUOTED'; fieldStart = false; i++; continue; }
+      fieldStart = false;
+      if (c === ','){ endField(); i++; continue; }
+      if (c === '\r'){ endRow(); i++; if (text[i] === '\n') i++; continue; }
+      if (c === '\n'){ endRow(); i++; continue; }
+      field += c; i++; continue;
+    } else if (state === 'QUOTED'){
+      if (c === '"'){ state = 'AFTERQUOTE'; i++; continue; }
+      field += c; i++; continue;
+    } else {
+      if (c === '"'){ field += '"'; state = 'QUOTED'; i++; continue; }
+      if (c === ','){ endField(); state = 'FIELD'; i++; continue; }
+      if (c === '\r'){ endRow(); state = 'FIELD'; i++; if (text[i] === '\n') i++; continue; }
+      if (c === '\n'){ endRow(); state = 'FIELD'; i++; continue; }
+      if (c === ' ' || c === '\t'){ i++; continue; }
+      field += c; state = 'FIELD'; i++; continue;
+    }
+  }
+  if (state === 'QUOTED') throw { code: 'E-08', msg: '引用符が閉じていません' };
+  if (field !== '' || row.length > 0) endRow();
+  if (rows.length === 0) return { header: [], rows: [] };
+  return { header: rows[0].map(h => h.trim()), rows: rows.slice(1) };
+}
+function toInt(s){
+  if (s == null) return NaN;
+  let t = String(s).normalize('NFKC').trim(); let neg = false;
+  if (/^\(.*\)$/.test(t)){ neg = true; t = t.slice(1, -1); }
+  t = t.replace(/[,¥￥円\s　]/g, '');
+  if (t.startsWith('-')){ neg = !neg; t = t.slice(1); }
+  if (!/^[0-9]+(\.[0-9]+)?$/.test(t)) return NaN;
+  const v = parseInt(t, 10); return neg ? -v : v;
+}
+function normName(s){
+  let t = String(s).trim().normalize('NFKC');
+  t = t.replace(/[\s　]/g, '');
+  t = t.replace(/^(株式会社|有限会社|\(株\)|\(有\))/, '');
+  t = t.replace(/(株式会社|有限会社|\(株\)|\(有\))$/, '');
+  return t.toLowerCase();
+}
+function normYM(s){ s = String(s).trim(); const m = s.match(/^(\d{4})-(\d{1,2})$/); return m ? m[1] + '-' + String(m[2]).padStart(2, '0') : s; }
+const MAPPING = { billone: {}, kaikake: {} };
+function toObjects(parsed, kind){
+  const map = MAPPING[kind] || {};
+  const H = parsed.header.map(h => map[h] || h); const idx = {}; H.forEach((h, i) => idx[h] = i);
+  const need = kind === 'billone' ? ['torihikisaki','seikyu_zeinuki','seikyu_zeikomi','seikyu_ym']
+                                  : ['shiiresaki','hacchu_hinmei_code','kenshu_kingaku','gokei_gaku'];
+  for (const col of need) if (!(col in idx)) throw { code: 'E-01', msg: `${kind} に必須列 ${col} がありません` };
+  if (parsed.rows.length === 0) throw { code: 'E-05', msg: `${kind} にデータ行がありません` };
+  const out = [];
+  for (let r = 0; r < parsed.rows.length; r++){
+    const cells = parsed.rows[r];
+    if (cells.length > H.length) throw { code: 'E-07', msg: `${kind} ${r + 2}行目の列数が多すぎます` };
+    const get = (h) => (h in idx ? (cells[idx[h]] ?? '') : '');
+    out.push({ _row: r + 2, get });
+  }
+  return out;
+}
+function run(billText, kaiText, opts){
+  opts = opts || {};
+  const taxBasis = opts.taxBasis || 'zeikomi';
+  const tol = opts.tol != null ? opts.tol : 1;
+  const bill = toObjects(parseCsv(billText), 'billone');
+  const kai = toObjects(parseCsv(kaiText), 'kaikake');
+  const evac = { dataError: [], keyEmpty: [], collision: [] };
+  const ymCount = {};
+  bill.forEach(r => { const y = normYM(r.get('seikyu_ym')); if (y) ymCount[y] = (ymCount[y] || 0) + 1; });
+  let targetYM = opts.targetYM ? normYM(opts.targetYM) : null;
+  if (!targetYM){ let best = null, bn = -1; Object.keys(ymCount).sort().reverse().forEach(y => { if (ymCount[y] > bn){ bn = ymCount[y]; best = y; } }); targetYM = best; }
+  const billCode = r => (r.get('torihikisaki_code') || '').trim();
+  const kaiCode = r => (r.get('shiiresaki_code') || '').trim();
+  const billInPeriod = bill.filter(r => !targetYM || normYM(r.get('seikyu_ym')) === targetYM);
+  const allB = billInPeriod.length > 0 && billInPeriod.every(r => billCode(r) !== '');
+  const allK = kai.length > 0 && kai.every(r => kaiCode(r) !== '');
+  const mode = (allB && allK) ? 'code' : 'name';
+  const billByKey = {}, kaiByKey = {}, kaiRowsByKey = {}, nameByKey = {};
+  const billTax = r => toInt(r.get(taxBasis === 'zeikomi' ? 'seikyu_zeikomi' : 'seikyu_zeinuki'));
+  const kaiTax = r => toInt(r.get(taxBasis === 'zeikomi' ? 'gokei_gaku' : 'kenshu_kingaku'));
+  for (const r of billInPeriod){
+    const nm = r.get('torihikisaki').trim();
+    if (nm === ''){ evac.keyEmpty.push({ file: 'billone', row: r._row }); continue; }
+    const v = billTax(r); if (isNaN(v)){ evac.dataError.push({ file: 'billone', row: r._row }); continue; }
+    const k = mode === 'code' ? billCode(r).toUpperCase() : normName(nm);
+    billByKey[k] = (billByKey[k] || 0) + v; if (!(k in nameByKey)) nameByKey[k] = nm;
+  }
+  const codeByName = {};
+  for (const r of kai){
+    const nm = r.get('shiiresaki').trim();
+    if (nm === ''){ evac.keyEmpty.push({ file: 'kaikake', row: r._row }); continue; }
+    const v = kaiTax(r); if (isNaN(v)){ evac.dataError.push({ file: 'kaikake', row: r._row }); continue; }
+    const k = mode === 'code' ? kaiCode(r).toUpperCase() : normName(nm);
+    if (mode === 'name'){ const cd = kaiCode(r); if (cd){ (codeByName[k] = codeByName[k] || new Set()).add(cd); } }
+    kaiByKey[k] = (kaiByKey[k] || 0) + v; (kaiRowsByKey[k] = kaiRowsByKey[k] || []).push(r);
+    if (!(k in nameByKey)) nameByKey[k] = nm;
+  }
+  const collisionKeys = new Set();
+  if (mode === 'name') for (const k of Object.keys(codeByName)) if (codeByName[k].size >= 2){ collisionKeys.add(k); evac.collision.push({ key: k, name: nameByKey[k], codes: [...codeByName[k]] }); }
+  const keys = new Set([...Object.keys(billByKey), ...Object.keys(kaiByKey)]);
+  const results = [];
+  for (const k of keys){
+    if (collisionKeys.has(k)) continue;
+    const hasB = k in billByKey, hasK = k in kaiByKey;
+    const b = hasB ? billByKey[k] : 0, m = hasK ? kaiByKey[k] : 0; const sagaku = b - m;
+    let hantei; if (hasB && hasK) hantei = Math.abs(sagaku) <= tol ? '一致' : '不一致'; else if (hasK) hantei = '未到着'; else hantei = '要確認（未計上）';
+    let breakdown = null;
+    if (hantei === '不一致'){
+      const g = {};
+      (kaiRowsByKey[k] || []).forEach(r => { const code = (r.get('hacchu_hinmei_code') || r.get('chumonsho_no') || '(不明)'); g[code] = (g[code] || 0) + kaiTax(r); });
+      breakdown = Object.keys(g).sort().map(code => ({ code, amount: g[code] }));
+    }
+    results.push({ key: k, name: nameByKey[k], bill: b, meisai: m, sagaku, hantei, breakdown, hasB, hasK });
+  }
+  const sev = { '不一致': 0, '未到着': 1, '要確認（未計上）': 2, '一致': 3 };
+  results.sort((a, c) => (sev[a.hantei] ?? 99) - (sev[c.hantei] ?? 99) || Math.abs(c.sagaku) - Math.abs(a.sagaku) || (a.name < c.name ? -1 : a.name > c.name ? 1 : 0) || (a.key < c.key ? -1 : a.key > c.key ? 1 : 0));
+  const sum = { match: 0, mismatch: 0, miflight: 0, check: 0 };
+  results.forEach(r => { if (r.hantei === '一致') sum.match++; else if (r.hantei === '不一致') sum.mismatch++; else if (r.hantei === '未到着') sum.miflight++; else sum.check++; });
+  return { mode, targetYM, taxBasis, tol, results, summary: sum, evac };
+}
+// ===== 文字コード判定（§3.0） =====
+function decodeBuf(buf){
+  const bytes = new Uint8Array(buf);
+  if (bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) return new TextDecoder('utf-8').decode(bytes);
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes); } catch (e) {}
+  try { return new TextDecoder('shift_jis', { fatal: true }).decode(bytes); } catch (e) {}
+  throw { code: 'E-04', msg: '文字コードを判定できません。UTF-8またはShift_JISのCSVで保存してください' };
+}
+// ===== UI =====
+const yen = n => (n < 0 ? '-¥' : '¥') + Math.abs(Number(n)).toLocaleString('ja-JP');
+const $ = id => document.getElementById(id);
+let billText = null, kaiText = null, lastResult = null;
+function readFile(input, kind, set){
+  const f = input.files[0]; if (!f) return;
+  const fr = new FileReader();
+  fr.onload = () => { try { set(decodeBuf(fr.result, kind)); $('msg').textContent = f.name + ' 読込済み'; } catch (e) { showErr(e.msg || e.code); } };
+  fr.readAsArrayBuffer(f);
+}
+$('f-bill').addEventListener('change', e => readFile(e.target, 'billone', t => billText = t));
+$('f-kai').addEventListener('change', e => readFile(e.target, 'kaikake', t => kaiText = t));
+function showErr(m){ const e = $('err'); e.textContent = '⚠ ' + m; e.classList.remove('hide'); $('cards').classList.add('hide'); $('result').innerHTML = ''; }
+function clearErr(){ $('err').classList.add('hide'); }
+function doRun(){
+  clearErr();
+  if (!billText || !kaiText){ showErr('2つのCSVを選んでください（または「サンプルで試す」）'); return; }
+  let res; try { res = run(billText, kaiText, { taxBasis: $('tax').value, targetYM: ($('ym').value.trim() || null) }); }
+  catch (e) { showErr((e.code ? e.code + ': ' : '') + (e.msg || '取込に失敗しました')); return; }
+  lastResult = res; render(res);
+}
+$('run').addEventListener('click', doRun);
+$('export').addEventListener('click', () => exportCsv(lastResult));
+function render(res){
+  const c = $('cards'); c.classList.remove('hide');
+  c.innerHTML =
+    `<div class="stat ok"><div class="n">${res.summary.match}</div><div class="l">一致</div></div>
+     <div class="stat warn"><div class="n">${res.summary.mismatch}</div><div class="l">不一致</div></div>
+     <div class="stat bad"><div class="n">${res.summary.miflight}</div><div class="l">未到着（督促）</div></div>
+     <div class="stat gray"><div class="n">${res.summary.check}</div><div class="l">要確認（未計上）</div></div>`;
+  const cls = h => h === '一致' ? 'ok' : h === '不一致' ? 'warn' : h === '未到着' ? 'bad' : 'gray';
+  let rows = '';
+  res.results.forEach((r, i) => {
+    const expandable = r.hantei === '不一致';
+    rows += `<tr class="${expandable ? 'mismatch-row' : ''}" ${expandable ? `onclick="toggleM(${i})"` : ''}>
+      <td>${esc(r.name)}${expandable ? ' ▾' : ''}</td>
+      <td class="num">${r.hasB ? yen(r.bill) : '—'}</td>
+      <td class="num">${r.hasK ? yen(r.meisai) : '—'}</td>
+      <td class="num">${r.sagaku ? yen(r.sagaku) : '¥0'}</td>
+      <td><span class="tag ${cls(r.hantei)}">${r.hantei}</span></td></tr>`;
+    if (expandable){
+      const bd = (r.breakdown || []).map(b => `品名コード ${esc(b.code)}：${yen(b.amount)}`).join(' ／ ');
+      rows += `<tr id="m${i}" class="meisai hide"><td colspan="5">明細内訳（${res.taxBasis === 'zeikomi' ? '税込' : '税抜'}）：${bd}　※請求書PDFの該当行を人がご確認ください</td></tr>`;
+    }
+  });
+  $('result').innerHTML = `<table><thead><tr><th>取引先</th><th style="text-align:right">BillOne合計</th><th style="text-align:right">買掛明細合計</th><th style="text-align:right">差額</th><th>判定</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const ev = $('evac'); const e = res.evac;
+  const total = e.dataError.length + e.keyEmpty.length + e.collision.length;
+  if (total){ ev.classList.remove('hide'); ev.innerHTML = `退避（処理対象外）：データ不正 ${e.dataError.length} ／ キー空 ${e.keyEmpty.length} ／ 名寄せ衝突 ${e.collision.length}` + (e.collision.length ? `（${e.collision.map(x => esc(x.name) + '[' + x.codes.map(esc).join('/') + ']').join('、')}）` : ''); }
+  else ev.classList.add('hide');
+  $('export').classList.remove('hide');
+  $('msg').textContent = `突合完了：対象 ${res.targetYM || '全'}・${res.taxBasis === 'zeikomi' ? '税込' : '税抜'}基準・mode=${res.mode}（処理はこのPC内のみ）`;
+}
+function toggleM(i){ $('m' + i).classList.toggle('hide'); }
+function esc(s){ return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
+function csvCell(s){ s = String(s); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+function exportCsv(res){
+  if (!res) return;
+  const now = new Date(); const p = n => String(n).padStart(2, '0');
+  const stamp = `${now.getFullYear()}${p(now.getMonth()+1)}${p(now.getDate())}_${p(now.getHours())}${p(now.getMinutes())}${p(now.getSeconds())}`;
+  const tzo = -now.getTimezoneOffset(); const tz = (tzo>=0?'+':'-')+p(Math.floor(Math.abs(tzo)/60))+':'+p(Math.abs(tzo)%60);
+  const iso = now.getFullYear()+'-'+p(now.getMonth()+1)+'-'+p(now.getDate())+'T'+p(now.getHours())+':'+p(now.getMinutes())+':'+p(now.getSeconds())+tz;
+  const s = res.summary;
+  let out = `# jikkou=${iso}, target_ym=${res.targetYM}, tax=${res.taxBasis}, tol=${res.tol}, match=${s.match}, mismatch=${s.mismatch}, miflight=${s.miflight}, check=${s.check}\r\n`;
+  out += 'torihikisaki,billone_gokei,meisai_gokei,sagaku,hantei\r\n';
+  res.results.forEach(r => { out += [csvCell(r.name), r.bill, r.meisai, r.sagaku, csvCell(r.hantei)].join(',') + '\r\n'; });
+  const blob = new Blob(['﻿' + out], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `totsugo_result_${stamp}.csv`; a.click(); URL.revokeObjectURL(a.href);
+}
+// サンプル（仕様§11・テスト済みと同一）
+$('sample').addEventListener('click', () => {
+  billText = `torihikisaki,torihikisaki_code,seikyu_zeinuki,shohizei,seikyu_zeikomi,seikyusho_no,seikyu_ym
+株式会社山田鋼材,Y0001,1000000,100000,1100000,B-001,2026-05
+関西スチール,Y0002,800000,80000,880000,B-002,2026-05
+堺鉄鋼,Y0003,450000,45000,495000,B-003,2026-05
+浪速金属工業,Y0004,2000000,200000,2200000,B-004,2026-05
+旧月テスト,Y0099,300000,30000,330000,B-099,2026-04`;
+  kaiText = `shiiresaki,shiiresaki_code,hacchu_hinmei_code,edaban,kenshu_suryo,kenshu_tanka,kenshu_kingaku,zeiritsu,shohizei_gaku,gokei_gaku,chumonsho_no,seisho_no,seizou_no
+山田鋼材(株),Y0001,YY01,001,10,100000,1000000,0.10,100000,1100000,C-1,S-1,M-1
+関西スチール,Y0002,KS01,001,5,160000,800000,0.10,80000,880000,C-2,S-2,M-2
+堺鉄鋼,Y0003,SK01,001,4,110000,440000,0.10,44000,484000,C-3,S-3,M-3
+三宅製作所,Y0006,MY01,001,2,300000,600000,0.10,60000,660000,C-6,S-6,M-6`;
+  $('msg').textContent = 'サンプル読込済み';
+  doRun();
+});
+</script>
+</body>
+</html>
