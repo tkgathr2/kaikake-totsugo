@@ -199,7 +199,7 @@ function toInt(s){
   t = t.replace(/[,¥￥円\s　]/g, '');
   if (t.startsWith('-')){ neg = !neg; t = t.slice(1); }
   if (!/^[0-9]+(\.[0-9]+)?$/.test(t)) return NaN;
-  const v = parseInt(t, 10); return neg ? -v : v;
+  const v = Math.round(parseFloat(t)); return neg ? -v : v;
 }
 function normName(s){
   let t = String(s).trim().normalize('NFKC');
@@ -359,9 +359,9 @@ function exportCsv(res){
   const s = res.summary;
   let out = `# jikkou=${iso}, target_ym=${res.targetYM}, tax=${res.taxBasis}, tol=${res.tol}, match=${s.match}, mismatch=${s.mismatch}, miflight=${s.miflight}, check=${s.check}\r\n`;
   out += 'torihikisaki,billone_gokei,meisai_gokei,sagaku,hantei\r\n';
-  res.results.forEach(r => { out += [csvCell(r.name), r.bill, r.meisai, r.sagaku, csvCell(r.hantei)].join(',') + '\r\n'; });
+  res.results.forEach(r => { out += [csvCell(r.name), r.hasB ? r.bill : '', r.hasK ? r.meisai : '', r.sagaku, csvCell(r.hantei)].join(',') + '\r\n'; });
   const blob = new Blob(['﻿' + out], { type: 'text/csv' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `totsugo_result_${stamp}.csv`; a.click(); URL.revokeObjectURL(a.href);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `totsugo_result_${stamp}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 // サンプル（仕様§11・テスト済みと同一）
 $('sample').addEventListener('click', () => {
